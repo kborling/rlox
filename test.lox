@@ -1,0 +1,9 @@
+class Lox {
+  message() {
+    print "This is a message!";
+  }
+
+  another(what) {
+    print "This is also a, " + what + ".";
+  }
+}
