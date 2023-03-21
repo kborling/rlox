@@ -3,7 +3,6 @@ use std::{
     io::{ErrorKind, Write, BufRead},
 };
 
-
 #[derive(Default)]
 pub struct Scanner {
     had_error: bool,
@@ -48,6 +47,6 @@ impl Scanner {
 
     fn report(&mut self, line: usize, line_number: &str, message: &str) {
         println!("[line {line}] Error{line_number}: {message}");
-        self.had_error = true
+        self.had_error = true;
     }
 }
