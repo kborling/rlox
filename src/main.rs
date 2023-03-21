@@ -1,5 +1,7 @@
 #![warn(clippy::all, clippy::pedantic)]
+mod token;
 mod scanner;
+pub use token::Token;
 use scanner::Scanner;
 
 fn main() -> sysexits::ExitCode {

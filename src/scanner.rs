@@ -3,12 +3,22 @@ use std::{
     io::{ErrorKind, Write, BufRead},
 };
 
-#[derive(Default)]
+use crate::Token;
+
 pub struct Scanner {
+    source: String,
+    tokens: Vec<Token>,
     had_error: bool,
 }
 
 impl Scanner {
+    pub fn default() -> Self {
+        Self {
+            source: String::from(""),
+            tokens: vec![],
+            had_error: false,
+        }
+    }
     pub fn run_prompt(&mut self) {
         loop {
             print!("> ");
