@@ -3,22 +3,72 @@ use std::{
     io::{ErrorKind, Write, BufRead},
 };
 
-use crate::Token;
+use crate::{Token, token::TokenType};
 
 pub struct Scanner {
     source: String,
     tokens: Vec<Token>,
+    start: usize,
+    current: usize,
+    line: i32,
     had_error: bool,
 }
 
 impl Scanner {
     pub fn default() -> Self {
         Self {
-            source: String::from(""),
+            source: String::new(),
             tokens: vec![],
+            start: 0,
+            current: 0,
+            line: 1,
             had_error: false,
         }
     }
+
+    fn scan_tokens(&mut self) {
+        while self.current >= self.source.len() {
+            self.start = self.current;
+            self.scan_token();
+        }
+
+        self.tokens.push(Token {
+            token_type: TokenType::Eof,
+            lexeme: String::new(),
+            literal: None,
+            line: self.line,
+        });
+    }
+
+    fn scan_token(&mut self) {
+        self.current += 1;
+        let c: char = self.source.chars().nth(self.current).unwrap();
+
+        match c {
+            '(' => self.add_token(TokenType::LeftParen),
+            ')' => self.add_token(TokenType::RightParen),
+            '{' => self.add_token(TokenType::LeftBrace),
+            '}' => self.add_token(TokenType::RightBrace),
+            ',' => self.add_token(TokenType::Comma),
+            '.' => self.add_token(TokenType::Dot),
+            '-' => self.add_token(TokenType::Minus),
+            '+' => self.add_token(TokenType::Plus),
+            ';' => self.add_token(TokenType::Semicolon),
+            '*' => self.add_token(TokenType::Star),
+            _ => ()
+        }
+    }
+
+    fn add_token(&mut self, token_type: TokenType) {
+        let text: String = self.source.chars().skip(self.start).take(self.current).collect();
+        self.tokens.push(Token {
+            token_type,
+            lexeme: text,
+            literal: None,
+            line: self.line,
+        });
+    }
+
     pub fn run_prompt(&mut self) {
         loop {
             print!("> ");

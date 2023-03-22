@@ -1,7 +1,7 @@
-use std::fmt;
+use std::{fmt, any::Any};
 
 #[derive(Debug)]
-enum TokenType {
+pub enum TokenType {
   // Single-character tokens.
   LeftParen, RightParen, LeftBrace, RightBrace,
   Comma, Dot, Minus, Plus, Semicolon, Slash, Star,
@@ -23,15 +23,15 @@ enum TokenType {
 }
 
 pub struct Token {
-    token_type: TokenType,
-    lexeme: String,
-    // literal: Object,
-    line: i32,
+    pub token_type: TokenType,
+    pub lexeme: String,
+    pub literal: Option<Box<dyn Any>>, // TODO: Test this
+    pub line: i32,
 }
 
-impl Token {
-       
-}
+// impl Token {
+//        
+// }
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
