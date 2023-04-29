@@ -43,8 +43,7 @@ impl Scanner {
     }
 
     fn scan_token(&mut self) {
-        let c: char = self.source.chars().nth(self.current).unwrap();
-        self.current += 1;
+        let c: char = self.advance();
 
         match c {
             '(' => self.add_token(TokenType::LeftParen),
@@ -81,6 +80,20 @@ impl Scanner {
                     false => self.add_token(TokenType::Greater),
                 }
             },
+            '/' => {
+                match self.match_tokens('/') {
+                    true => {
+                        while self.peek() != '\n' && !self.at_end() {
+                            self.advance();
+                        }
+                    },
+                    false => self.add_token(TokenType::Slash),
+                }
+            },
+            ' ' => (),
+            '\r' => (),
+            '\t' => (),
+            '\n' => self.line += 1,
             _ => {
                 self.error(self.line, "Unexpected character.");
             }
@@ -105,16 +118,33 @@ impl Scanner {
 
     fn match_tokens(&mut self, expected: char) -> bool {
         
-        if self.current >= self.source.len() {
+        if self.at_end() {
             return false;
         }
 
-        if self.source.chars().nth(self.current).unwrap() != expected {
+        if self.peek() != expected {
             return false;
         }
         
         self.current += 1;
         true
+    }
+
+    fn at_end(&self) -> bool {
+        self.current >= self.source.len()
+    }
+
+    fn advance(&mut self) -> char {
+        let c: char = self.source.chars().nth(self.current).unwrap();
+        self.current += 1;
+        c
+    }
+
+    fn peek(&self) -> char {
+        if self.current >= self.source.len() {
+            return '\0';
+        }
+        return self.source.chars().nth(self.current).unwrap()
     }
 
     fn error(&mut self, line: i32, message: &str) {
