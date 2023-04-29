@@ -1,9 +1,9 @@
 use std::{
     fs::File,
-    io::{ErrorKind, Write, BufRead},
+    io::{BufRead, ErrorKind, Write},
 };
 
-use crate::{Token, token::TokenType};
+use crate::{token::TokenType, Token};
 
 pub struct Scanner {
     source: String,
@@ -27,7 +27,7 @@ impl Scanner {
     }
 
     fn scan_tokens(&mut self) {
-        while self.current >= self.source.len() {
+        while self.current < self.source.len() {
             self.start = self.current;
             self.scan_token();
         }
@@ -41,8 +41,8 @@ impl Scanner {
     }
 
     fn scan_token(&mut self) {
-        self.current += 1;
         let c: char = self.source.chars().nth(self.current).unwrap();
+        self.current += 1;
 
         match c {
             '(' => self.add_token(TokenType::LeftParen),
@@ -55,12 +55,42 @@ impl Scanner {
             '+' => self.add_token(TokenType::Plus),
             ';' => self.add_token(TokenType::Semicolon),
             '*' => self.add_token(TokenType::Star),
-            _ => ()
+            '!' => {
+                match self.match_tokens('=') {
+                    true => self.add_token(TokenType::BangEqual),
+                    false => self.add_token(TokenType::Bang),
+                }
+            },
+            '=' => {
+                match self.match_tokens('=') {
+                    true => self.add_token(TokenType::EqualEqual),
+                    false => self.add_token(TokenType::Equal),
+                }
+            },
+            '<' => {
+                match self.match_tokens('=') {
+                    true => self.add_token(TokenType::LessEqual),
+                    false => self.add_token(TokenType::Less),
+                }
+            },
+            '>' => {
+                match self.match_tokens('=') {
+                    true => self.add_token(TokenType::GreaterEqual),
+                    false => self.add_token(TokenType::Greater),
+                }
+            },
+            _ => self.error(self.line, "Unexpected character.")
         }
     }
 
     fn add_token(&mut self, token_type: TokenType) {
-        let text: String = self.source.chars().skip(self.start).take(self.current).collect();
+        let text: String = self
+            .source
+            .chars()
+            .skip(self.start)
+            .take(self.current)
+            .collect();
+        
         self.tokens.push(Token {
             token_type,
             lexeme: text,
@@ -69,18 +99,39 @@ impl Scanner {
         });
     }
 
+    fn match_tokens(&mut self, expected: char) -> bool {
+        
+        if self.current >= self.source.len() {
+            return false;
+        }
+
+        if self.source.chars().nth(self.current).unwrap() != expected {
+            return false;
+        }
+        
+        self.current += 1;
+        true
+    }
+
+    fn run(&mut self, source: String) {
+        self.source = source;
+        self.scan_tokens();
+
+        println!("{:?}", self.tokens);
+    }
+
     pub fn run_prompt(&mut self) {
         loop {
             print!("> ");
             std::io::stdout().flush().unwrap();
             let mut line = String::new();
             std::io::stdin().read_line(&mut line).unwrap();
-            line.chars().for_each(|c| print!("{c}"));
-            self.had_error = false;
+
+            self.run(line);
         }
     }
 
-    pub fn run_file(&self) {
+    pub fn run_file(&mut self) {
         let args: Vec<String> = std::env::args().collect();
         let path = &args[1];
         let file = match File::open(path) {
@@ -97,15 +148,15 @@ impl Scanner {
         };
         let reader = std::io::BufReader::new(&file);
         for line in reader.lines().flatten() {
-            line.chars().for_each(|c| print!("{c}"));
+            self.run(line);
         }
     }
 
-    fn error(&mut self, line: usize, message: &str) {
+    fn error(&mut self, line: i32, message: &str) {
         self.report(line, "", message);
     }
 
-    fn report(&mut self, line: usize, line_number: &str, message: &str) {
+    fn report(&mut self, line: i32, line_number: &str, message: &str) {
         println!("[line {line}] Error{line_number}: {message}");
         self.had_error = true;
     }

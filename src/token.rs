@@ -1,27 +1,57 @@
-use std::{fmt, any::Any};
+use std::{any::Any, fmt};
 
 #[derive(Debug)]
 pub enum TokenType {
-  // Single-character tokens.
-  LeftParen, RightParen, LeftBrace, RightBrace,
-  Comma, Dot, Minus, Plus, Semicolon, Slash, Star,
+    // Single-character tokens.
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
+    Comma,
+    Dot,
+    Minus,
+    Plus,
+    Semicolon,
+    Slash,
+    Star,
 
-  // One or two character tokens.
-  Bang, BangEqual,
-  Equal, EqualEqual,
-  Greater, GreaterEqual,
-  Less, LessEqual,
+    // One or two character tokens.
+    Bang,
+    BangEqual,
+    Equal,
+    EqualEqual,
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
 
-  // Literals.
-  Identifier, String, Number,
+    // Literals.
+    Identifier,
+    String,
+    Number,
 
-  // Keywords.
-  And, Class, Else, False, Fun, For, If, Nil, Or,
-  Print, Return, Super, This, True, Var, While,
+    // Keywords.
+    And,
+    Class,
+    Else,
+    False,
+    Fun,
+    For,
+    If,
+    Nil,
+    Or,
+    Print,
+    Return,
+    Super,
+    This,
+    True,
+    Var,
+    While,
 
-  Eof
+    Eof,
 }
 
+#[derive(Debug)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
@@ -30,7 +60,7 @@ pub struct Token {
 }
 
 // impl Token {
-//        
+//
 // }
 
 impl fmt::Display for Token {
