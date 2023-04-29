@@ -99,7 +99,13 @@ impl Scanner {
             '\n' => self.line += 1,
             '"' => self.string_literal(),
             _ => {
-                self.error("Unexpected character.");
+                if self.is_digit(c) {
+                    self.number_literal();
+                } else if self.is_alpha(c) {
+                    self.identifier();
+                } else {
+                    self.error("Unexpected character.")
+                }
             }
         }
     }
@@ -139,7 +145,6 @@ impl Scanner {
     }
 
     fn string_literal(&mut self) {
-        println!("Handle string literal");
 
         while self.peek() != '"' && !self.at_end() {
             if self.peek() == '\n' {
@@ -159,13 +164,66 @@ impl Scanner {
         self.add_token_literal(TokenType::String, Some(Box::new(literal_value)));
     }
 
+    fn number_literal(&mut self) {
+        while self.is_digit(self.peek()) {
+            self.current += 1;
+        }
+
+        if self.peek() == '.' && self.is_digit(self.peek_next()) {
+            self.current += 1;
+
+            while self.is_digit(self.peek()) {
+                self.current += 1;
+            }
+        }
+        let literal_value = self.source.chars().skip(self.start).take(self.current).collect::<String>();
+        let literal_value = literal_value.parse::<f64>();
+        let literal_value = match literal_value {
+            Ok(v) => v,
+            Err(_) => {
+                self.error("Invalid number.");
+                return
+            }
+        };
+        self.add_token_literal(TokenType::Number, Some(Box::new(literal_value)));
+    }
+
+    fn identifier(&mut self) {
+        while self.is_alpha_numeric(self.peek()) {
+            self.current += 1;
+        }
+
+        self.add_token(TokenType::Identifier)
+    }
+
+    fn is_digit(&self, c: char) -> bool {
+        c >= '0' && c <= '9'
+    }
+
+    fn is_alpha(&self, c: char) -> bool {
+        (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+    }
+
+    fn is_alpha_numeric(&self, c: char) -> bool {
+        self.is_alpha(c) || self.is_digit(c)
+    }
+
     fn at_end(&self) -> bool {
         self.current >= self.source.len()
     }
 
     fn peek(&self) -> char {
         let current_char = self.source.chars().nth(self.current);
-            
+        
+        match current_char {
+            Some(c) => c,
+            None => '\0',
+        }
+    }
+
+    fn peek_next(&self) -> char {
+        let current_char = self.source.chars().nth(self.current + 1);
+
         match current_char {
             Some(c) => c,
             None => '\0',
