@@ -1,8 +1,3 @@
-use std::{
-    fs::File,
-    io::{BufRead, ErrorKind, Write},
-};
-
 use crate::{token::TokenType, Token};
 
 pub struct Scanner {
@@ -17,7 +12,7 @@ pub struct Scanner {
 impl Scanner {
     pub fn default() -> Self {
         Self {
-            source: String::new(),
+            source: "".to_string(),
             tokens: vec![],
             start: 0,
             current: 0,
@@ -26,8 +21,15 @@ impl Scanner {
         }
     }
 
+    pub fn run(&mut self, source: String) {
+        self.source = source;
+        self.scan_tokens();
+
+        println!("{:?}", self.tokens);
+    }
+
     fn scan_tokens(&mut self) {
-        while self.current < self.source.len() {
+        while self.current < self.source.len() - 1 {
             self.start = self.current;
             self.scan_token();
         }
@@ -79,7 +81,9 @@ impl Scanner {
                     false => self.add_token(TokenType::Greater),
                 }
             },
-            _ => self.error(self.line, "Unexpected character.")
+            _ => {
+                self.error(self.line, "Unexpected character.");
+            }
         }
     }
 
@@ -111,45 +115,6 @@ impl Scanner {
         
         self.current += 1;
         true
-    }
-
-    fn run(&mut self, source: String) {
-        self.source = source;
-        self.scan_tokens();
-
-        println!("{:?}", self.tokens);
-    }
-
-    pub fn run_prompt(&mut self) {
-        loop {
-            print!("> ");
-            std::io::stdout().flush().unwrap();
-            let mut line = String::new();
-            std::io::stdin().read_line(&mut line).unwrap();
-
-            self.run(line);
-        }
-    }
-
-    pub fn run_file(&mut self) {
-        let args: Vec<String> = std::env::args().collect();
-        let path = &args[1];
-        let file = match File::open(path) {
-            Ok(file) => file,
-            Err(error) => {
-                if error.kind() == ErrorKind::NotFound {
-                    println!("File not found: {path}");
-                    std::process::exit(sysexits::ExitCode::NoInput as i32);
-                } else {
-                    println!("Error opening file: {error}");
-                    std::process::exit(sysexits::ExitCode::Software as i32);
-                }
-            }
-        };
-        let reader = std::io::BufReader::new(&file);
-        for line in reader.lines().flatten() {
-            self.run(line);
-        }
     }
 
     fn error(&mut self, line: i32, message: &str) {
