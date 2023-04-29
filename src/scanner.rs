@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use crate::{token::TokenType, Token};
 
 pub struct Scanner {
@@ -36,14 +38,15 @@ impl Scanner {
 
         self.tokens.push(Token {
             token_type: TokenType::Eof,
-            lexeme: String::new(),
+            lexeme: "".to_string(),
             literal: None,
             line: self.line,
         });
     }
 
     fn scan_token(&mut self) {
-        let c: char = self.advance();
+        let c: char = self.peek();
+        self.current += 1;
 
         match c {
             '(' => self.add_token(TokenType::LeftParen),
@@ -84,7 +87,7 @@ impl Scanner {
                 match self.match_tokens('/') {
                     true => {
                         while self.peek() != '\n' && !self.at_end() {
-                            self.advance();
+                            self.current += 1;
                         }
                     },
                     false => self.add_token(TokenType::Slash),
@@ -94,13 +97,18 @@ impl Scanner {
             '\r' => (),
             '\t' => (),
             '\n' => self.line += 1,
+            '"' => self.string_literal(),
             _ => {
-                self.error(self.line, "Unexpected character.");
+                self.error("Unexpected character.");
             }
         }
     }
 
     fn add_token(&mut self, token_type: TokenType) {
+        self.add_token_literal(token_type, None);
+    }
+
+    fn add_token_literal(&mut self, token_type: TokenType, literal: Option<Box<dyn Any>>) {
         let text: String = self
             .source
             .chars()
@@ -111,7 +119,7 @@ impl Scanner {
         self.tokens.push(Token {
             token_type,
             lexeme: text,
-            literal: None,
+            literal,
             line: self.line,
         });
     }
@@ -130,29 +138,46 @@ impl Scanner {
         true
     }
 
+    fn string_literal(&mut self) {
+        println!("Handle string literal");
+
+        while self.peek() != '"' && !self.at_end() {
+            if self.peek() == '\n' {
+                self.line += 1;
+            }
+            self.current += 1;
+        }
+
+        if self.at_end() {
+            self.error("Unterminated string.");
+            return
+        }
+
+        self.current += 1;
+
+        let literal_value = self.source.chars().skip(self.start + 1).take(self.current - 2).collect::<String>();
+        self.add_token_literal(TokenType::String, Some(Box::new(literal_value)));
+    }
+
     fn at_end(&self) -> bool {
         self.current >= self.source.len()
     }
 
-    fn advance(&mut self) -> char {
-        let c: char = self.source.chars().nth(self.current).unwrap();
-        self.current += 1;
-        c
-    }
-
     fn peek(&self) -> char {
-        if self.current >= self.source.len() {
-            return '\0';
+        let current_char = self.source.chars().nth(self.current);
+            
+        match current_char {
+            Some(c) => c,
+            None => '\0',
         }
-        return self.source.chars().nth(self.current).unwrap()
     }
 
-    fn error(&mut self, line: i32, message: &str) {
-        self.report(line, "", message);
+    fn error(&mut self, message: &str) {
+        self.report(self.line, "", message);
     }
 
     fn report(&mut self, line: i32, line_number: &str, message: &str) {
-        println!("[line {line}] Error{line_number}: {message}");
+        println!("[line {line}] Error {line_number}: {message}");
         self.had_error = true;
     }
 }
