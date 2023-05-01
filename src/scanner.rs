@@ -1,4 +1,4 @@
-use std::any::Any;
+use core::any::Any;
 
 use crate::{token::TokenType, Token};
 
@@ -59,39 +59,29 @@ impl Scanner {
             '+' => self.add_token(TokenType::Plus),
             ';' => self.add_token(TokenType::Semicolon),
             '*' => self.add_token(TokenType::Star),
-            '!' => {
-                match self.match_tokens('=') {
-                    true => self.add_token(TokenType::BangEqual),
-                    false => self.add_token(TokenType::Bang),
-                }
+            '!' => match self.match_tokens('=') {
+                true => self.add_token(TokenType::BangEqual),
+                false => self.add_token(TokenType::Bang),
             },
-            '=' => {
-                match self.match_tokens('=') {
-                    true => self.add_token(TokenType::EqualEqual),
-                    false => self.add_token(TokenType::Equal),
-                }
+            '=' => match self.match_tokens('=') {
+                true => self.add_token(TokenType::EqualEqual),
+                false => self.add_token(TokenType::Equal),
             },
-            '<' => {
-                match self.match_tokens('=') {
-                    true => self.add_token(TokenType::LessEqual),
-                    false => self.add_token(TokenType::Less),
-                }
+            '<' => match self.match_tokens('=') {
+                true => self.add_token(TokenType::LessEqual),
+                false => self.add_token(TokenType::Less),
             },
-            '>' => {
-                match self.match_tokens('=') {
-                    true => self.add_token(TokenType::GreaterEqual),
-                    false => self.add_token(TokenType::Greater),
-                }
+            '>' => match self.match_tokens('=') {
+                true => self.add_token(TokenType::GreaterEqual),
+                false => self.add_token(TokenType::Greater),
             },
-            '/' => {
-                match self.match_tokens('/') {
-                    true => {
-                        while self.peek() != '\n' && !self.at_end() {
-                            self.current += 1;
-                        }
-                    },
-                    false => self.add_token(TokenType::Slash),
+            '/' => match self.match_tokens('/') {
+                true => {
+                    while self.peek() != '\n' && !self.at_end() {
+                        self.current += 1;
+                    }
                 }
+                false => self.add_token(TokenType::Slash),
             },
             ' ' => (),
             '\r' => (),
@@ -121,7 +111,7 @@ impl Scanner {
             .skip(self.start)
             .take(self.current)
             .collect();
-        
+
         self.tokens.push(Token {
             token_type,
             lexeme: text,
@@ -131,7 +121,6 @@ impl Scanner {
     }
 
     fn match_tokens(&mut self, expected: char) -> bool {
-        
         if self.at_end() {
             return false;
         }
@@ -139,13 +128,12 @@ impl Scanner {
         if self.peek() != expected {
             return false;
         }
-        
+
         self.current += 1;
         true
     }
 
     fn string_literal(&mut self) {
-
         while self.peek() != '"' && !self.at_end() {
             if self.peek() == '\n' {
                 self.line += 1;
@@ -155,12 +143,17 @@ impl Scanner {
 
         if self.at_end() {
             self.error("Unterminated string.");
-            return
+            return;
         }
 
         self.current += 1;
 
-        let literal_value = self.source.chars().skip(self.start + 1).take(self.current - 2).collect::<String>();
+        let literal_value = self
+            .source
+            .chars()
+            .skip(self.start + 1)
+            .take(self.current - 2)
+            .collect::<String>();
         self.add_token_literal(TokenType::String, Some(Box::new(literal_value)));
     }
 
@@ -176,13 +169,18 @@ impl Scanner {
                 self.current += 1;
             }
         }
-        let literal_value = self.source.chars().skip(self.start).take(self.current).collect::<String>();
+        let literal_value = self
+            .source
+            .chars()
+            .skip(self.start)
+            .take(self.current)
+            .collect::<String>();
         let literal_value = literal_value.parse::<f64>();
         let literal_value = match literal_value {
             Ok(v) => v,
             Err(_) => {
                 self.error("Invalid number.");
-                return
+                return;
             }
         };
         self.add_token_literal(TokenType::Number, Some(Box::new(literal_value)));
@@ -193,8 +191,22 @@ impl Scanner {
             self.current += 1;
         }
 
-        self.add_token(TokenType::Identifier)
+        let text = self
+            .source
+            .chars()
+            .skip(self.start)
+            .take(self.current)
+            .collect::<String>();
+
+        let token_type = Token::parse_keyword(&text);
+
+        match token_type {
+            Some(token_type) => self.add_token(token_type),
+            None => self.add_token(TokenType::Identifier),
+        }
     }
+
+    // fn is_reserved(&self, word: &str) -> bool {}
 
     fn is_digit(&self, c: char) -> bool {
         c >= '0' && c <= '9'
@@ -214,7 +226,7 @@ impl Scanner {
 
     fn peek(&self) -> char {
         let current_char = self.source.chars().nth(self.current);
-        
+
         match current_char {
             Some(c) => c,
             None => '\0',

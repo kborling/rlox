@@ -1,13 +1,14 @@
 #![warn(clippy::all, clippy::pedantic)]
-mod token;
+
 mod scanner;
+mod token;
 use std::{
     fs::File,
     io::{BufRead, ErrorKind, Write},
 };
 
-pub use token::Token;
 use scanner::Scanner;
+pub use token::Token;
 
 fn main() -> sysexits::ExitCode {
     let args: Vec<String> = std::env::args().collect();
@@ -62,4 +63,3 @@ fn run_file() {
         Scanner::default().run(line);
     }
 }
-
